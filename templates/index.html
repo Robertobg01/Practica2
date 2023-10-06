@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Imágenes DALL-E</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Estilo para el título */
+        h1 {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        /* Estilos para las cajas de entrada de texto */
+        .box1 {
+            background-color: #6cb8e8;
+            color: black;
+            border-radius: 10px;
+        }
+        .box2 {
+            width: 40px;
+            height: 25px;
+            font-size: 12px;
+            background-color: #6cb8e8;
+            color: black;
+            border-radius: 10px;
+        }
+        .formulario-elemento {
+            text-align: center;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .contenedor-central {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Generador de Imágenes DALL-E</h1>
+    <div class="contenedor-central">
+        <form id="imagenForm" action="/" method="POST">
+            <label for="descripcion" class="formulario-elemento"><strong>Ingresa la descripción de la imagen:</strong></label>
+            <input type="text" id="descripcion" name="descripcion" class="box1" required>
+            <label for="numeroImagenes" class="formulario-elemento"><strong>Número de imágenes:</strong></label>
+            <input type="number" id="numeroImagenes" name="numeroImagenes" class="box2" required>
+            <button type="submit" class="formulario-elemento" onclick="validarFormulario(event)">Generar Imágenes</button>
+        </form>
+    </div>
+    <!-- Carrusel de imágenes -->
+    <div id="respuestasCarousel" class="carousel slide mx-auto" data-ride="carousel" style="max-width: 600px;">
+        <ol class="carousel-indicators" id="carouselIndicators">
+            <!-- Indicadores de carrusel se generarán dinámicamente aquí -->
+        </ol>
+        <div class="carousel-inner" id="carouselInner">
+            <!-- Imágenes de carrusel se generarán dinámicamente aquí -->
+        </div>
+        <a class="carousel-control-prev" href="#respuestasCarousel" role="button" data-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="sr-only">Anterior</span>
+        </a>
+        <a class="carousel-control-next" href="#respuestasCarousel" role="button" data-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="sr-only">Siguiente</span>
+        </a>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function validarFormulario(event) {
+            const descripcion = document.getElementById("descripcion").value;
+            const numeroImagenes = document.getElementById("numeroImagenes").value;
+
+            if (descripcion.trim() === "" || numeroImagenes.trim() === "") {
+                event.preventDefault(); // Evita el envío del formulario si los campos están vacíos
+                alert("Por favor, completa todos los campos antes de enviar el formulario.");
+            }
+        }
+
+        // Escuchar el evento de envío del formulario
+        document.getElementById("imagenForm").addEventListener("submit", function (event) {
+            event.preventDefault(); // Evita el envío del formulario por defecto
+
+            // Obtener los valores del formulario
+            const descripcion = document.getElementById("descripcion").value;
+            const numeroImagenes = document.getElementById("numeroImagenes").value;
+
+            // Realizar una solicitud POST al servidor Flask
+            fetch("/", {
+                method: "POST",
+                body: JSON.stringify({ descripcion, numeroImagenes }),
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const carruselInner = document.getElementById("carouselInner");
+                const carouselIndicators = document.getElementById("carouselIndicators");
+
+                carruselInner.innerHTML = "";
+                carouselIndicators.innerHTML = "";
+
+                data.respuestas.forEach((url, index) => {
+                    const imagenDiv = document.createElement("div");
+                    imagenDiv.classList.add("carousel-item");
+                    if (index === 0) {
+                        imagenDiv.classList.add("active");
+                    }
+
+                    const imagen = document.createElement("img");
+                    imagen.src = url;
+                    imagen.alt = `Imagen ${index + 1}`;
+                    imagenDiv.appendChild(imagen);
+
+                    carruselInner.appendChild(imagenDiv);
+
+                    const indicator = document.createElement("li");
+                    indicator.setAttribute("data-target", "#respuestasCarousel");
+                    indicator.setAttribute("data-slide-to", index.toString());
+                    if (index === 0) {
+                        indicator.classList.add("active");
+                    }
+                    carouselIndicators.appendChild(indicator);
+                });
+
+                $("#respuestasCarousel").carousel();
+            });
+        });
+    </script>
+</body>
+</html>
